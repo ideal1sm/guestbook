@@ -14,14 +14,12 @@ use Twig\Environment;
 class ConferenceController extends AbstractController
 {
     #[Route('/', name: 'homepage', methods: 'GET')]
-    public function index(ConferenceRepository $conferenceRepository): Response
+    public function index(): Response
     {
-        return new Response($this->render('conference/index.html.twig', [
-            'conferences' => $conferenceRepository->findAll(),
-        ]));
+        return new Response($this->render('conference/index.html.twig')->getContent());
     }
 
-    #[Route('/conference/{id}', name: 'conference')]
+    #[Route('/conference/{slug}', name: 'conference')]
     public function show(Request $request, Conference $conference, CommentRepository $commentRepository): Response
     {
         $offset = max(0, $request->query->getInt('offset', 0));
@@ -33,6 +31,6 @@ class ConferenceController extends AbstractController
             'previous' => $offset - CommentRepository::PAGINATOR_PER_PAGE,
             'next' => min(count($paginator), $offset + CommentRepository::PAGINATOR_PER_PAGE),
 
-        ]));
+        ])->getContent());
     }
 }
