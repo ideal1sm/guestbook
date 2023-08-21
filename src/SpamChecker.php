@@ -22,7 +22,7 @@ class SpamChecker
     {
         $response = $this->client->request('POST', $this->endpoint, [
             'body' => array_merge($context, [
-                'blog' => 'localho',
+                'blog' => 'https://main-bvxea6i-xfjme3rrr55hc.de-2.platformsh.site/',
                 'comment_type' => 'comment',
                 'comment_author' => $comment->getAuthor(),
                 'comment_author_email' => $comment->getEmail(),
