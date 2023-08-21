@@ -22,7 +22,7 @@ class SpamChecker
     {
         $response = $this->client->request('POST', $this->endpoint, [
             'body' => array_merge($context, [
-                'blog' => 'https://main-bvxea6i-xfjme3rrr55hc.de-2.platformsh.site/',
+                'blog' => 'https://guesbook.example.wip/',
                 'comment_type' => 'comment',
                 'comment_author' => $comment->getAuthor(),
                 'comment_author_email' => $comment->getEmail(),
@@ -34,14 +34,15 @@ class SpamChecker
             ]),
         ]);
 
-        $headers = $response->getHeaders();
-        if ('discard' === ($headers['x-akismet-pro-tip'][0])) {
-            return 2;
-        }
-
         $content = $response->getContent();
+        $headers = $response->getHeaders();
+
         if (isset($headers['x-akismet-debug-help'][0])) {
             throw new \RuntimeException(sprintf('Unable to check for spam: %s (%s).', $content, $headers['x-akismet-debug-help'][0]));
+        }
+
+        if ('discard' === ($headers['x-akismet-pro-tip'][0])) {
+            return 2;
         }
 
         return 'true' === $content ? 1 : 0;

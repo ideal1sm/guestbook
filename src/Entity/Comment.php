@@ -94,7 +94,7 @@ class Comment
     }
 
     #[ORM\PrePersist]
-    public function setCreatedAtValue(PrePersistEventArgs $createdAt): void
+    public function setCreatedAtValue(?PrePersistEventArgs $createdAt = null): void
     {
         $this->createdAt = new \DateTimeImmutable();
     }

@@ -50,15 +50,16 @@ class ConferenceController extends AbstractController
 
             $this->entityManager->persist($comment);
 
-            $context = [
-                'user_ip' => $request->getClientIp(),
-                'user_agent' => $request->headers->get('user-agent'),
-                'referrer' => $request->headers->get('referer'),
-                'permalink' => $request->getUri(),
-            ];
-            if (2 === $spamChecker->getSpamScore($comment, $context)) {
-                throw new \RuntimeException('Spam, go away!');
-            }
+            /* TODO: Spam checker doesnt work. */
+//            $context = [
+//                'user_ip' => $request->getClientIp(),
+//                'user_agent' => $request->headers->get('user-agent'),
+//                'referrer' => $request->headers->get('referer'),
+//                'permalink' => $request->getUri(),
+//            ];
+//            if (2 === $spamChecker->getSpamScore($comment, $context)) {
+//                throw new \RuntimeException('Spam, go away!');
+//            }
 
             $this->entityManager->flush();
 
