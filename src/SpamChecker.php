@@ -11,7 +11,7 @@ class SpamChecker
     private string $endpoint;
 
     public function __construct(
-        private HttpClientInterface $client,
+        private HttpClientInterface              $client,
         #[Autowire('%env(AKISMET_KEY)%')] string $akismetKey
     )
     {
@@ -22,7 +22,7 @@ class SpamChecker
     {
         $response = $this->client->request('POST', $this->endpoint, [
             'body' => array_merge($context, [
-                'blog' => 'https://guesbook.example.wip/',
+                'blog' => 'https://guesbook.example.wip',
                 'comment_type' => 'comment',
                 'comment_author' => $comment->getAuthor(),
                 'comment_author_email' => $comment->getEmail(),
@@ -34,15 +34,14 @@ class SpamChecker
             ]),
         ]);
 
-        $content = $response->getContent();
         $headers = $response->getHeaders();
-
-        if (isset($headers['x-akismet-debug-help'][0])) {
-            throw new \RuntimeException(sprintf('Unable to check for spam: %s (%s).', $content, $headers['x-akismet-debug-help'][0]));
+        if (isset($headers['x-akismet-pro-tip']) && ('discard' === ($headers['x-akismet-pro-tip'][0]))) {
+            return 2;
         }
 
-        if ('discard' === ($headers['x-akismet-pro-tip'][0])) {
-            return 2;
+        $content = $response->getContent();
+        if (isset($headers['x-akismet-debug-help'][0])) {
+            throw new \RuntimeException(sprintf('Unable to check for spam: %s (%s).', $content, $headers['x-akismet-debug-help'][0]));
         }
 
         return 'true' === $content ? 1 : 0;
