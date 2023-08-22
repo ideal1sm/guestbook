@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Workflow\WorkflowInterface;
+use Twig\Environment;
 
 class ConferenceController extends AbstractController
 {
@@ -28,7 +30,33 @@ class ConferenceController extends AbstractController
     #[Route('/', name: 'homepage')]
     public function index(): Response
     {
-        return new Response($this->render('conference/index.html.twig')->getContent());
+        return $this->render('conference/index.html.twig')->setSharedMaxAge(3600);
+    }
+
+    #[Route('/admin/comment/review/{id}', name: 'review_comment')]
+    public function reviewComment(Request $request, Comment $comment, WorkflowInterface $commentStateMachine): Response
+    {
+        $accepted = !$request->query->get('reject');
+
+        if ($commentStateMachine->can($comment, 'publish')) {
+            $transition = $accepted ? 'publish' : 'reject';
+        } elseif ($commentStateMachine->can($comment, 'publish_ham')) {
+            $transition = $accepted ? 'publish_ham' : 'reject_ham';
+        } else {
+            return new Response('Comment already reviewed or not in the right state.');
+        }
+
+        $commentStateMachine->apply($comment, $transition);
+        $this->entityManager->flush();
+
+        if ($accepted) {
+            $this->bus->dispatch(new CommentMessage($comment->getId()));
+        }
+
+        return new Response($this->render('admin/review.html.twig', [
+            'transition' => $transition,
+            'comment' => $comment
+        ]));
     }
 
     #[Route('/conference/{slug}', name: 'conference')]
