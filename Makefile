@@ -7,3 +7,9 @@ tests:
 	symfony console doctrine:fixtures:load -n --env=test
 	symfony php bin/phpunit $(MAKECMDGOALS)
 .PHONY: tests
+start:
+	symfony proxy:start
+	symfony server:start -d
+	docker compose up -d
+	symfony run -d --watch=config,src,templates,vendor symfony console messenger:consume async -vv
+.PHONY: start

@@ -7,7 +7,7 @@ use App\Entity\Conference;
 use App\Form\CommentType;
 use App\Message\CommentMessage;
 use App\Repository\CommentRepository;
-use App\SpamChecker;
+use App\Repository\ConferenceRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -15,8 +15,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Workflow\WorkflowInterface;
-use Twig\Environment;
 
 class ConferenceController extends AbstractController
 {
@@ -28,35 +26,20 @@ class ConferenceController extends AbstractController
     }
 
     #[Route('/', name: 'homepage')]
-    public function index(): Response
+    public function index(ConferenceRepository $conferenceRepository): Response
     {
-        return $this->render('conference/index.html.twig')->setSharedMaxAge(3600);
+        return $this->render('conference/index.html.twig', [
+            'conferences' => $conferenceRepository->findAll()
+        ])
+            ->setSharedMaxAge(3600);
     }
 
-    #[Route('/admin/comment/review/{id}', name: 'review_comment')]
-    public function reviewComment(Request $request, Comment $comment, WorkflowInterface $commentStateMachine): Response
+    #[Route('/conference_header', name: 'conference_header')]
+    public function conferenceHeader(ConferenceRepository $conferenceRepository): Response
     {
-        $accepted = !$request->query->get('reject');
-
-        if ($commentStateMachine->can($comment, 'publish')) {
-            $transition = $accepted ? 'publish' : 'reject';
-        } elseif ($commentStateMachine->can($comment, 'publish_ham')) {
-            $transition = $accepted ? 'publish_ham' : 'reject_ham';
-        } else {
-            return new Response('Comment already reviewed or not in the right state.');
-        }
-
-        $commentStateMachine->apply($comment, $transition);
-        $this->entityManager->flush();
-
-        if ($accepted) {
-            $this->bus->dispatch(new CommentMessage($comment->getId()));
-        }
-
-        return new Response($this->render('admin/review.html.twig', [
-            'transition' => $transition,
-            'comment' => $comment
-        ]));
+        return $this->render('conference/header.html.twig', [
+            'conferences' => $conferenceRepository->findAll(),
+        ])->setSharedMaxAge(3600);
     }
 
     #[Route('/conference/{slug}', name: 'conference')]
